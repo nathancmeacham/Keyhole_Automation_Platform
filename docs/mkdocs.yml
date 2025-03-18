@@ -1,1 +1,31 @@
-site_name: My Docs
+site_name: Keyhole Automation Platform Docs
+site_url: https://your-docs-site.com
+repo_url: https://github.com/nathancmeacham/Keyhole_Automation_Platform
+theme:
+  name: material
+  palette:
+    primary: blue
+    accent: indigo
+  features:
+    - navigation.tabs
+    - navigation.indexes
+    - navigation.instant
+    - search.suggest
+    - search.highlight
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Setup Guide: guides/setup_guide.md
+      - Usage Guide: guides/usage_guide.md
+  - White Papers:
+      - Architecture: whitepapers/architecture_overview.md
+      - Security: whitepapers/security_best_practices.md
+      - API Design: whitepapers/api_design.md
+  - API Reference: api_reference.md
+  - Changelog: changelog.md
+
+plugins:
+  - search
+  - autorefs
+  - mermaid2
