@@ -13,7 +13,7 @@ from codebase_snapshot import snapshot_and_commit
 from project_utils import count_files
 from fact_extractor import extract_facts
 
-# Configure logging
+''' # Configure logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 
 def debug_log(message):
@@ -23,6 +23,7 @@ def debug_log(message):
 debug_log("Initializing memory collection...")
 init_memory_collection()
 debug_log("Memory system initialized.")
+'''
 
 load_dotenv()
 
