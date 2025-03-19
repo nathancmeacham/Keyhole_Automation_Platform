@@ -89,61 +89,50 @@ def retrieve_memory(query, memory_type=None, top_k=5):
 
 def store_fact(key, value):
     """
-    Ensure the fact is updated by deleting the old value before storing the new one.
+    Store or update a fact in Qdrant.
+    Ensure old values are deleted before storing the new one.
     """
     vectorstore = QdrantVectorStore(client=qdrant_client, collection_name=COLLECTION_FACTS, embedding=embeddings)
 
-    try:
-        # 🔴 DELETE existing fact first
+    # Step 1: Retrieve previous stored values
+    search_results = vectorstore.similarity_search(f"{key}", k=1)
+
+    if search_results:
+        print(f"🗑️ Deleting old fact for '{key}'...")
         qdrant_client.delete(
             collection_name=COLLECTION_FACTS,
             points_selector=Filter(
-                must=[FieldCondition(key="fact_key", match=MatchValue(value=key))]
+                must=[FieldCondition(key="metadata.fact_key", match=MatchValue(value=key))]
             )
         )
-        print(f"🗑️ Deleted old fact for '{key}'")
 
-    except Exception as e:
-        print(f"⚠️ Warning: Could not delete old fact '{key}'. It may not exist.")
-
-    # ✅ STORE the new fact correctly
+    # Step 2: Store the new fact
+    print(f"✅ Storing new fact: {key} = {value}")
     vectorstore.add_texts([f"{key}: {value}"], metadatas=[{"fact_key": key}])
-    print(f"✅ Fact stored: {key} = {value}")
 
 
 
 
 def retrieve_fact(key):
     """
-    Retrieve a stored fact from Qdrant with exact matching.
+    Retrieve a stored fact from Qdrant and log debug info.
     """
-    try:
-        vectorstore = QdrantVectorStore(client=qdrant_client, collection_name=COLLECTION_FACTS, embedding=embeddings)
-
-        # 🔍 Retrieve based on exact key
-        search_results = vectorstore.similarity_search(f"{key}:", k=3)  # Get multiple results
-
-        print(f"🔍 DEBUG: Searching for {key}. Found {len(search_results)} results.")
-
+    vectorstore = QdrantVectorStore(client=qdrant_client, collection_name=COLLECTION_FACTS, embedding=embeddings)
+    
+    search_results = vectorstore.similarity_search(f"{key}", k=5)  # Get more results for debugging
+    
+    if search_results:
+        print(f"🔍 DEBUG: Retrieved facts for {key}:")
         for result in search_results:
-            print(f"🔹 DEBUG: Result: {result.page_content}")
-            if result.page_content.startswith(f"{key}: "):  # ✅ Ensure exact match
-                return result.page_content.split(": ", 1)[1]  # Extract value
-        
-        return None  # No valid result found
-    except Exception as e:
-        print(f"❌ Error retrieving fact '{key}': {e}")
-        return None
+            print(f"   - {result.page_content}")  # Log all stored values
+        return search_results[0].page_content.split(": ", 1)[1]  # Extract actual value
+
+    print(f"⚠️ DEBUG: No fact found for key: {key}")
+    return None
+
 
 
 
 # 🔹 Initialize both collections when the module is imported
 init_memory_collection()
-
-# ❌ Wipe the 'facts' collection (TEMPORARY FIX)
-print("🗑️ Deleting entire 'facts' collection to reset stored facts...")
-qdrant_client.delete_collection(collection_name=COLLECTION_FACTS)
-
-# ✅ Recreate it fresh
 init_fact_collection()
-print("✅ Fresh 'facts' collection created!")
