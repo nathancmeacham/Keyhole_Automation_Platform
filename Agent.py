@@ -13,17 +13,8 @@ from codebase_snapshot import snapshot_and_commit
 from project_utils import count_files
 from fact_extractor import extract_facts
 
-''' # Configure logging
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
-
-def debug_log(message):
-    logging.debug(message)
-
-# Initialize system
-debug_log("Initializing memory collection...")
-init_memory_collection()
-debug_log("Memory system initialized.")
-'''
+# Disable all logging
+logging.disable(logging.CRITICAL)
 
 load_dotenv()
 
@@ -83,6 +74,22 @@ if __name__ == "__main__":
             print("Exiting RAG Agent. Goodbye!")
             break
 
+        # Check for stored name first
+        if "my name" in user_query.lower():
+            fact_value = retrieve_fact("user_name")
+            if fact_value:
+                answer = f"Your name is {fact_value}."
+                print("\n🤖 Answer:", answer)
+                continue  # Skip further processing since we have the answer
+            else:
+                answer = "I don't know your name yet. What should I call you?"
+                print("\n🤖 Answer:", answer)
+                new_name = input("Enter your name: ").strip()
+                if new_name:
+                    store_fact("user_name", new_name)
+                    print(f"\n✅ Got it! I'll remember that your name is {new_name}.")
+                continue  # Skip further processing since we've handled the name storage
+
         extracted_facts = extract_facts(user_query)
         if extracted_facts:
             for key, value in extracted_facts.items():
@@ -90,7 +97,7 @@ if __name__ == "__main__":
             answer = "✅ Got it! I've learned the following facts:\n"
             answer += "\n".join([f"- {k.replace('_', ' ').title()}: {v}" for k, v in extracted_facts.items()])
         else:
-            known_facts = ["user_name", "lead_developer", "project_name", "project_purpose"]
+            known_facts = ["lead_developer", "project_name", "project_purpose"]
             answered = False
             for fact_key in known_facts:
                 if fact_key.replace("_", " ") in user_query.lower():
@@ -101,7 +108,7 @@ if __name__ == "__main__":
                         answer = f"I don't know {fact_key.replace('_', ' ')} yet."
                     answered = True
                     break
-
+                    
             if not answered:
                 if "how many files" in user_query.lower():
                     num_files = count_files()
