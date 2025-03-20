@@ -1,0 +1,6 @@
+# Keyhole_Automation_Platform\backend\mcp\requirements.txt
+fastapi
+uvicorn[standard]
+pydantic-settings
+pytest
+httpx
