@@ -1,8 +1,17 @@
-".venv/" 
-"__pycache__/" 
-"*.log" 
-"*.sqlite3" 
-"*.db" 
-"node_modules/" 
-"mkdocs/site/" 
-".env" 
+# Ignore Python virtual environments and caches
+.venv/
+__pycache__/
+
+# Ignore logs and database files
+*.log
+*.sqlite3
+*.db
+
+# Ignore environment variables
+.env
+
+# Ignore dependencies
+node_modules/
+
+# Ignore MkDocs build artifacts
+mkdocs/site/
