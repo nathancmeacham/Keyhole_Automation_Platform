@@ -1,0 +1,33 @@
+# Keyhole_Automation_Platform/.github/workflows/frontend.yml
+
+name: 🧪 Frontend Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run Jest Tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend/Keyhole-Solution-App
+
+    steps:
+      - name: 🛎 Checkout Code
+        uses: actions/checkout@v3
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 🧪 Run Jest Tests
+        run: npm test
