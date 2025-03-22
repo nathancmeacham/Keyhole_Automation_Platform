@@ -1,3 +1,4 @@
+# init_project.py
 import os
 import sys
 
@@ -10,6 +11,11 @@ if BACKEND_PATH not in sys.path:
     sys.path.insert(0, BACKEND_PATH)
 
 # Initialize memory system before running anything
-from memory_manager import init_memory_collection
+try:
+    from memory_manager import init_memory_collection
+    init_memory_collection()
+    print("✅ Memory system initialized.")
+except ImportError as e:
+    print(f"⚠️ Skipping memory initialization: {e}")
 
 print("✅ Project initialized. All modules are now importable.")

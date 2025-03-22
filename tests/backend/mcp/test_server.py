@@ -1,7 +1,7 @@
 # Keyhole_Automation_Platform\tests\backend\mcp\test_server.py
 import pytest
 from fastapi.testclient import TestClient
-from backend.mcp.src.server import app
+from server import app
 
 client = TestClient(app)  # ✅ Create a test client for the FastAPI app
 
