@@ -5,6 +5,7 @@ import Svg, { G, Circle, Path } from 'react-native-svg';
 
 const LogoIcon = ({ size }: { size: number }) => (
   <Svg
+    testID="logo-svg"
     width={size}
     height={size}
     viewBox="0 0 256 256"
