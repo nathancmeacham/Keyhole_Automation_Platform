@@ -1,0 +1,946 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://your-docs-site.com/React%20Native%20Settup/">
+      
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.9">
+    
+    
+      
+        <title>React Native Settup - Keyhole Automation Platform Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.4af4bdda.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#frontend-react-app-setup-testing" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Keyhole Automation Platform Docs" class="md-header__button md-logo" aria-label="Keyhole Automation Platform Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Keyhole Automation Platform Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              React Native Settup
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/nathancmeacham/Keyhole_Automation_Platform" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guides/setup_guide.md" class="md-tabs__link">
+          
+  
+    
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../whitepapers/architecture_overview.md" class="md-tabs__link">
+          
+  
+    
+  
+  White Papers
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api_reference.md" class="md-tabs__link">
+        
+  
+    
+  
+  API Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog.md" class="md-tabs__link">
+        
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Keyhole Automation Platform Docs" class="md-nav__button md-logo" aria-label="Keyhole Automation Platform Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Keyhole Automation Platform Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/nathancmeacham/Keyhole_Automation_Platform" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Getting Started
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/setup_guide.md" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Setup Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/usage_guide.md" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Usage Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    White Papers
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            White Papers
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../whitepapers/architecture_overview.md" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../whitepapers/security_best_practices.md" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../whitepapers/api_design.md" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    API Design
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api_reference.md" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog.md" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Changelog
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#react-frontend-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      ⚙️ React Frontend Setup
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="⚙️ React Frontend Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      ✅ Installation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#react-testing-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      🧪 React Testing Setup
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🧪 React Testing Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#test-folder-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      📁 Test Folder Structure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#running-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      ✅ Running Tests
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<p>✅ Setting up the React App (Vite + Tailwind)</p>
+<p>✅ Frontend Testing (Jest-based)</p>
+<p>✅ Matches your project's structure (Keyhole-Solution-App for frontend)</p>
+<p>📘 React App Setup &amp; Testing Guide
+⚙️ Setting Up the React Frontend
+Our frontend is built using Vite with React and Tailwind CSS. The project resides in:</p>
+<p>bash
+Copy
+Edit
+/Keyhole_Automation_Platform/frontend
+✅ Installation Steps
+Navigate to the frontend directory:</p>
+<p>bash
+Copy
+Edit
+cd frontend
+Install dependencies:</p>
+<p>bash
+Copy
+Edit
+npm install
+Run the development server:</p>
+<p>bash
+Copy
+Edit
+npm run dev
+Build for production:</p>
+<p>bash
+Copy
+Edit
+npm run build
+Preview production build:</p>
+<p>bash
+Copy
+Edit
+npm run preview
+🧪 Frontend Testing Strategy
+We use Jest with React Testing Library for unit testing the React components.</p>
+<p>🗂 Test File Structure
+All tests for the React app live under:</p>
+<p>bash
+Copy
+Edit
+/Keyhole_Automation_Platform/Keyhole-Solution-App/tests
+Tests mirror the source structure from frontend/src. For example:</p>
+<p>Component Source    Test Location
+frontend/src/components/Chatbot.jsx Keyhole-Solution-App/tests/components/Chatbot.test.jsx
+frontend/src/utils/helpers.ts   Keyhole-Solution-App/tests/utils/helpers.test.ts
+✅ Running Tests
+From the frontend directory:</p>
+<p>bash
+Copy
+Edit
+npm test
+Or to run with watch mode:</p>
+<p>bash
+Copy
+Edit
+npm run test:watch
+If test:watch is not set, add it in package.json:</p>
+<p>json
+Copy
+Edit
+"scripts": {
+  "test": "jest",
+  "test:watch": "jest --watch"
+}
+🧪 Jest Configuration
+Jest config is located in:</p>
+<p>arduino
+Copy
+Edit
+/frontend/jest.config.js
+We use:</p>
+<p>jsdom as test environment</p>
+<p>@testing-library/react for component testing</p>
+<p>Support for .jsx, .tsx, .ts, .js</p>
+<p>🧼 Best Practices
+Tests live outside the source code, grouped in Keyhole-Solution-App/tests.</p>
+<p>Every component should have at least one unit test.</p>
+<p>Use mocking for API calls or global stores.</p>
+<p>Let me know if you want me to generate a starter jest.config.js or create an example test case in your structure.</p>
+<p>You said:
+excuse me.  I need this written in markdown for our mkdocs
+ChatGPT said:
+Absolutely! Here's the full Markdown version you can drop directly into your MkDocs documentation (e.g., as frontend.md under your docs/ folder):</p>
+<p>markdown
+Copy
+Edit</p>
+<h1 id="frontend-react-app-setup-testing">🖥️ Frontend: React App Setup &amp; Testing</h1>
+<h2 id="react-frontend-setup">⚙️ React Frontend Setup</h2>
+<p>The Keyhole Automation Platform uses a modern <strong>React</strong> frontend built with <strong>Vite</strong> and styled using <strong>Tailwind CSS</strong>.</p>
+<p>📁 Project location:
+/Keyhole_Automation_Platform/frontend</p>
+<p>markdown
+Copy
+Edit</p>
+<h3 id="installation">✅ Installation</h3>
+<ol>
+<li>
+<p><strong>Navigate to the frontend directory</strong>:
+    <code>bash
+    cd frontend</code></p>
+</li>
+<li>
+<p><strong>Install dependencies</strong>:
+    <code>bash
+    npm install</code></p>
+</li>
+<li>
+<p><strong>Run the development server</strong>:
+    <code>bash
+    npm run dev</code></p>
+</li>
+<li>
+<p><strong>Build for production</strong>:
+    <code>bash
+    npm run build</code></p>
+</li>
+<li>
+<p><strong>Preview the production build</strong>:
+    <code>bash
+    npm run preview</code></p>
+</li>
+</ol>
+<hr />
+<h2 id="react-testing-setup">🧪 React Testing Setup</h2>
+<p>We use <strong>Jest</strong> along with <strong>React Testing Library</strong> for unit testing React components.</p>
+<p>🧪 Test files live outside the source code under:</p>
+<p>/Keyhole_Automation_Platform/Keyhole-Solution-App/tests</p>
+<p>yaml
+Copy
+Edit</p>
+<p>This allows for centralized testing and easier batch testing across all frontend modules.</p>
+<h3 id="test-folder-structure">📁 Test Folder Structure</h3>
+<p>Test files mirror the structure of your <code>frontend/src</code> directory.</p>
+<table>
+<thead>
+<tr>
+<th>Component Source</th>
+<th>Test Location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>frontend/src/components/Chatbot.jsx</code></td>
+<td><code>Keyhole-Solution-App/tests/components/Chatbot.test.jsx</code></td>
+</tr>
+<tr>
+<td><code>frontend/src/utils/helpers.ts</code></td>
+<td><code>Keyhole-Solution-App/tests/utils/helpers.test.ts</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="running-tests">✅ Running Tests</h3>
+<p>From inside the <code>frontend</code> directory:</p>
+<p>```bash
+npm test
+To run tests in watch mode:</p>
+<p>bash
+Copy
+Edit
+npm run test:watch
+If test:watch isn't already set up, add it in your package.json:</p>
+<p>json
+Copy
+Edit
+"scripts": {
+  "test": "jest",
+  "test:watch": "jest --watch"
+}
+⚙️ Jest Configuration
+The Jest config file is located at:</p>
+<p>arduino
+Copy
+Edit
+/frontend/jest.config.js
+We use:</p>
+<p>jsdom as the test environment</p>
+<p>@testing-library/react for component-level testing</p>
+<p>TypeScript support for .ts / .tsx files</p>
+<p>Aliased imports and babel-jest for JSX handling (optional depending on your setup)</p>
+<p>✅ Best Practices
+🧪 Keep test files outside the source tree in Keyhole-Solution-App/tests.</p>
+<p>🧪 Every component or logic module should have a matching test file.</p>
+<p>📦 Use mocking for API services, global stores, or environment dependencies.</p>
+<p>🎯 Aim for unit and integration coverage, especially for form logic, API calls, and rendering.</p>
+<p>🔧 Need help scaffolding tests or generating the Jest config? Just ask.</p>
+<p>vbnet
+Copy
+Edit</p>
+<p>Let me know if you'd like this broken into two separate docs (<code>frontend-setup.md</code> and <code>frontend-testing.md</code>), or want it auto-added to <code>mkdocs.yml</code>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.indexes", "navigation.instant", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c8b220af.min.js"></script>
+      
+    
+  </body>
+</html>
