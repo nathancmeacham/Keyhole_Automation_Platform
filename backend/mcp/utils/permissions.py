@@ -1,3 +1,6 @@
+# Keyhole_Automation_Platform\backend\mcp\utils\permissions.py
+
+
 ALLOWED_FILES = set([
     "example.py",
     "utils.py",

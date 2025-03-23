@@ -1,4 +1,8 @@
-# Keyhole_Automation_Platform\backend\qdrant.py
+# Keyhole_Automation_Platform\archive\backend\qdrant_raw.py
+# 🔒 ARCHIVED MODULE - DO NOT USE IN PRODUCTION
+# This file was an early prototype of Qdrant integration using dummy embeddings.
+# It has been superseded by: backend\mcp\memory\qdrant_memory.py
+
 import uuid  # ✅ Fix: Ensure uuid is imported
 from qdrant_client import QdrantClient
 from qdrant_client.models import ScoredPoint, VectorParams, Distance, PointStruct, SearchRequest

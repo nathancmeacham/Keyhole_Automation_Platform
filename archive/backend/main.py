@@ -1,3 +1,7 @@
+# 🔒 ARCHIVED - Early prototype MCP backend with LLM-driven code suggestions
+# Replaced by modular FastAPI server in backend/mcp/src/fastmcp/server.py
+
+
 import os
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse

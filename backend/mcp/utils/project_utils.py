@@ -1,4 +1,5 @@
-# project_utils.py
+# Keyhole_Automation_Platform\backend\mcp\utils\project_utils.py
+
 import os
 
 def count_files(directory='.'):

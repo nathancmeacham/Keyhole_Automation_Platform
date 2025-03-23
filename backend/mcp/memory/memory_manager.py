@@ -1,3 +1,7 @@
+# Keyhole_Automation_Platform\backend\mcp\memory\memory_manager.py
+
+
+
 from qdrant_client.http.models import Distance, VectorParams, Filter, FieldCondition, MatchValue
 from qdrant_client import QdrantClient
 from langchain_openai import OpenAIEmbeddings
@@ -115,17 +119,21 @@ def store_fact(key, value):
 
 def retrieve_fact(key):
     """
-    Retrieve a stored fact from Qdrant and log debug info.
+    Retrieve a stored fact from Qdrant using exact key filtering.
     """
     vectorstore = QdrantVectorStore(client=qdrant_client, collection_name=COLLECTION_FACTS, embedding=embeddings)
-    
-    search_results = vectorstore.similarity_search(f"{key}", k=5)  # Get more results for debugging
-    
+
+    qdrant_filter = Filter(
+        must=[FieldCondition(key="metadata.fact_key", match=MatchValue(value=key))]
+    )
+
+    search_results = vectorstore.similarity_search(f"{key}", k=1, filter=qdrant_filter)
+
     if search_results:
         print(f"🔍 DEBUG: Retrieved facts for {key}:")
         for result in search_results:
-            print(f"   - {result.page_content}")  # Log all stored values
-        return search_results[0].page_content.split(": ", 1)[1]  # Extract actual value
+            print(f"   - {result.page_content}")
+        return search_results[0].page_content.split(": ", 1)[1]
 
     print(f"⚠️ DEBUG: No fact found for key: {key}")
     return None

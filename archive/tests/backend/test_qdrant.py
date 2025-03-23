@@ -1,5 +1,9 @@
 # File: C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\unit_tests\test_qdrant.py
 # Unit tests for QdrantMemory
+# 🔒 ARCHIVED TEST - NOT RUN DURING ACTIVE TESTING
+# This test targets deprecated QdrantMemory logic now stored in archive/backend/qdrant_raw.py
+# This test is not run during active testing, but is kept for reference purposes
+# To run this test, move it to the active test folder and update the import path
 
 import unittest
 from backend.qdrant import QdrantMemory

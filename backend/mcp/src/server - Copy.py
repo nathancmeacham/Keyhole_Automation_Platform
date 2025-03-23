@@ -12,26 +12,15 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = FastAPI()
 
-# ✅ CORS configuration
+# ✅ Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # You can restrict this later
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ✅ Health check: root
-@app.get("/")
-def root():
-    return {"status": "MCP Backend running"}
-
-# ✅ Health check: status
-@app.get("/mcp/status")
-def mcp_status():
-    return {"status": "ok"}
-
-# ✅ Agent endpoint
 class AgentRequest(BaseModel):
     user_message: str
 
