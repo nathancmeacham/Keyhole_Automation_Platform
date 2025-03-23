@@ -6,6 +6,7 @@ cd C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform
 # Start Qdrant Docker container
 "C:\Program Files\Docker\Docker\Docker Desktop.exe"
 docker run -p 6333:6333 qdrant/qdrant
+
 	🧠 Helpful Docker Commands
 	Command	Description
 	docker ps	Show running containers
@@ -21,6 +22,7 @@ uvicorn backend.mcp.server:app --reload
 
 
 # Start React frontend
+cd C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\frontend\Keyhole-Solution-App
 npm start
 
 ## Stage Github commits
