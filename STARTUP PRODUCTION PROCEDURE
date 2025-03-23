@@ -17,7 +17,8 @@ docker run -p 6333:6333 qdrant/qdrant
 	docker rmi <image_id>	Remove an image
 
 # Start FastAPI backend with virtual environment and uvicorn
-uvicorn backend.mcp.src.server:app --reload
+uvicorn backend.mcp.server:app --reload
+
 
 # Start React frontend
 npm start

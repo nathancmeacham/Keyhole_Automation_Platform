@@ -1,7 +1,7 @@
-# Keyhole_Automation_Platform\tests\backend\mcp\src\test_server.py
+# Keyhole_Automation_Platform\tests\backend\mcp\test_server.py
 
 from fastapi.testclient import TestClient
-from backend.mcp.src.server import app  # ✅ Import path matches your project structure
+from backend.mcp.server import app
 
 client = TestClient(app)
 

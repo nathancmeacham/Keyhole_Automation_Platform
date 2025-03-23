@@ -1,6 +1,5 @@
 # Keyhole_Automation_Platform\tests\backend\mcp\test_config.py
-from backend.mcp.src.config import settings  # ✅ Ensure correct path
-
+from backend.mcp.config import settings
 def test_config_values():
     """Test if configuration values load correctly from .env"""
     assert settings.ENV == "development"
