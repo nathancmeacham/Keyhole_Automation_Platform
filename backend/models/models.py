@@ -18,3 +18,14 @@ class Suggestion(BaseModel):
 class Approval(BaseModel):
     file: str
     approved: bool
+
+class Fact(BaseModel):
+    key: str
+    value: str
+
+class Conversation(BaseModel):
+    text: str
+
+class User(BaseModel):
+    user_id: int
+    username: str
