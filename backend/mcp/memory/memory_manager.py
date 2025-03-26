@@ -22,6 +22,7 @@ QDRANT_URL = os.getenv("QDRANT_URL")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 EMBEDDING_DIMENSIONS = 3072
+DEFAULT_USER_ID = "guest"
 
 class MemoryManager:
     def __init__(self):
@@ -33,11 +34,14 @@ class MemoryManager:
             model="text-embedding-3-large", openai_api_key=OPENAI_API_KEY
         )
         self.qdrant_client = QdrantClient(url=QDRANT_URL)
-        self.COLLECTION_MEMORY = "rag_memory"
-        self.COLLECTION_FACTS = "facts"
+        self.base_memory_collection = "rag_memory"
+        self.base_facts_collection = "facts"
+        self.ip_analytics_collection = "ip_analytics"
 
-        self.ensure_collection(self.COLLECTION_MEMORY, EMBEDDING_DIMENSIONS)
-        self.ensure_collection(self.COLLECTION_FACTS, EMBEDDING_DIMENSIONS)
+        self.ensure_collection(self.ip_analytics_collection, EMBEDDING_DIMENSIONS)
+
+    def _get_collection_name(self, base, user_id):
+        return f"{base}_{user_id}"
 
     def ensure_collection(self, name, vector_size):
         try:
@@ -56,48 +60,29 @@ class MemoryManager:
         except Exception as e:
             print(f"❌ Error checking or creating collection '{name}': {e}")
 
-    def recreate_collection(self, *args, **kwargs):    raise RuntimeError("🚨 recreate_collection was called unexpectedly!")
+    def recreate_collection(self, *args, **kwargs):
+        raise RuntimeError("🚨 recreate_collection was called unexpectedly!")
 
-
-    def init_memory_collection(self):
-        collections = [
-            c.name for c in self.qdrant_client.get_collections().collections
-        ]
-        if self.COLLECTION_MEMORY not in collections:
-            self.recreate_collection(self.COLLECTION_MEMORY, EMBEDDING_DIMENSIONS)
-        else:
-            print(
-                f"✅ Qdrant '{self.COLLECTION_MEMORY}' collection already exists. Skipping recreation."
-            )
-
-    def init_fact_collection(self):
-        collections = [
-            c.name for c in self.qdrant_client.get_collections().collections
-        ]
-        if self.COLLECTION_FACTS not in collections:
-            self.recreate_collection(self.COLLECTION_FACTS, EMBEDDING_DIMENSIONS)
-        else:
-            print(
-                f"✅ Qdrant '{self.COLLECTION_FACTS}' collection already exists. Skipping recreation."
-            )
-
-    def store_memory(self, text, metadata):
+    def store_memory(self, text, metadata, user_id=DEFAULT_USER_ID):
         try:
+            collection = self._get_collection_name(self.base_memory_collection, user_id)
+            self.ensure_collection(collection, EMBEDDING_DIMENSIONS)
             vectorstore = QdrantVectorStore(
                 client=self.qdrant_client,
-                collection_name=self.COLLECTION_MEMORY,
+                collection_name=collection,
                 embedding=self.embeddings,
             )
             vectorstore.add_texts([text], metadatas=[metadata])
-            print(f"✅ Stored memory: {text[:30]}...")
+            print(f"✅ Stored memory for {user_id}: {text[:30]}...")
         except Exception as e:
             print(f"❌ Failed to store memory: {e}")
 
-    def retrieve_memory(self, query, memory_type=None, top_k=5):
+    def retrieve_memory(self, query, memory_type=None, top_k=5, user_id=DEFAULT_USER_ID):
         try:
+            collection = self._get_collection_name(self.base_memory_collection, user_id)
             vectorstore = QdrantVectorStore(
                 client=self.qdrant_client,
-                collection_name=self.COLLECTION_MEMORY,
+                collection_name=collection,
                 embedding=self.embeddings,
             )
 
@@ -117,13 +102,14 @@ class MemoryManager:
             print(f"❌ Error retrieving memory: {e}")
             return []
 
-    def store_fact(self, key, value):
+    def store_fact(self, key, value, user_id=DEFAULT_USER_ID):
         try:
-            point_id = int(md5(key.encode()).hexdigest()[:8], 16)
+            point_id = int(md5(f"{user_id}_{key}".encode()).hexdigest()[:8], 16)
             vector = self.embeddings.embed_query(f"{key}: {value}")
-
+            collection = self._get_collection_name(self.base_facts_collection, user_id)
+            self.ensure_collection(collection, EMBEDDING_DIMENSIONS)
             self.qdrant_client.upsert(
-                collection_name=self.COLLECTION_FACTS,
+                collection_name=collection,
                 points=[
                     PointStruct(
                         id=point_id,
@@ -135,33 +121,35 @@ class MemoryManager:
                     )
                 ],
             )
-            print(f"✅ Stored fact: {key} = {value} (ID: {point_id})")
+            print(f"✅ Stored fact for {user_id}: {key} = {value} (ID: {point_id})")
         except Exception as e:
             print(f"❌ Failed to store fact: {e}")
 
-    def retrieve_fact(self, key):
+    def retrieve_fact(self, key, user_id=DEFAULT_USER_ID):
         try:
-            point_id = int(md5(key.encode()).hexdigest()[:8], 16)
+            point_id = int(md5(f"{user_id}_{key}".encode()).hexdigest()[:8], 16)
+            collection = self._get_collection_name(self.base_facts_collection, user_id)
             result = self.qdrant_client.retrieve(
-                collection_name=self.COLLECTION_FACTS,
+                collection_name=collection,
                 ids=[point_id]
             )
             if result and len(result) > 0:
                 value = result[0].payload.get("text", "").split(": ", 1)[1]
-                print(f"🔍 Retrieved fact for '{key}': {value}")
+                print(f"🔍 Retrieved fact for '{key}' (user={user_id}): {value}")
                 return value
 
-            print(f"⚠️ No fact found for key: {key}")
+            print(f"⚠️ No fact found for key: {key} (user={user_id})")
             return None
 
         except Exception as e:
             print(f"❌ Error retrieving fact: {e}")
             return None
 
-    def list_all_facts(self):
+    def list_all_facts(self, user_id=DEFAULT_USER_ID):
         try:
+            collection = self._get_collection_name(self.base_facts_collection, user_id)
             response, _ = self.qdrant_client.scroll(
-                collection_name=self.COLLECTION_FACTS,
+                collection_name=collection,
                 with_payload=True,
                 limit=1000
             )
@@ -179,3 +167,39 @@ class MemoryManager:
         except Exception as e:
             print(f"❌ Error listing all facts: {e}")
             return {}
+
+    def store_guest_ip(self, ip):
+        key = f"guest_ip::{ip}"
+        self.store_fact(key, "1", user_id=self.ip_analytics_collection)
+
+    def track_guest_ip(self, ip):
+        """Alias for test clarity — ensures one call style."""
+        self.store_guest_ip(ip)
+
+    def list_guest_ips(self):
+        return [
+            k.split("::")[-1]
+            for k in self.list_all_facts(user_id=self.ip_analytics_collection).keys()
+            if k.startswith("guest_ip::")
+        ]
+
+    def track_user_ip(self, user_id, ip):
+        """Only stores a new IP for a user if it doesn't already exist."""
+        key = f"user_ip::{user_id}::{ip}"
+        point_id = int(md5(f"{self.ip_analytics_collection}_{key}".encode()).hexdigest()[:8], 16)
+
+        # Check if point already exists before storing
+        result = self.qdrant_client.retrieve(
+            collection_name=self._get_collection_name(self.base_facts_collection, self.ip_analytics_collection),
+            ids=[point_id]
+        )
+
+        if not result:
+            self.store_fact(key, "1", user_id=self.ip_analytics_collection)
+
+    def get_user_ips(self, user_id):
+        return [
+            k.split("::")[-1]
+            for k in self.list_all_facts(user_id=self.ip_analytics_collection).keys()
+            if k.startswith(f"user_ip::{user_id}::")
+        ]

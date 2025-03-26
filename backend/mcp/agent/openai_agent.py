@@ -3,7 +3,7 @@
 import os
 import re
 from dotenv import load_dotenv
- 
+from fastapi import Request
 from backend.mcp.memory.memory_singleton import memory_manager
 
 load_dotenv()
@@ -14,7 +14,6 @@ USE_GEMINI = ENV == "development"
 
 print(f"🔁 ENV: {ENV}")
 print(f"🧠 USE_GEMINI: {USE_GEMINI}")
-
 
 SYSTEM_PROMPT = (
     "You are a digital agent connected to an external memory system via an MCP backend. "
@@ -38,13 +37,10 @@ if USE_GEMINI:
 import openai
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-
 def clean_json_string(json_str):
-    # Remove backticks or markdown formatting
     return re.sub(r"^```(?:json)?|```$", "", json_str.strip(), flags=re.IGNORECASE)
 
-
-def run_agent(user_message: str, model: str = None) -> str:
+def run_agent(user_message: str, model: str = None, user_id: str = "guest", client_ip: str = None) -> str:
     model_map = {
         "gpt-4o": "gpt-4o",
         "gpt-4": "gpt-4",
@@ -58,7 +54,7 @@ def run_agent(user_message: str, model: str = None) -> str:
     print(f"🧠 Requested Model: {model} → Using: {selected_model}")
 
     try:
-        prior_memories = memory_manager.retrieve_memory(user_message, top_k=5)
+        prior_memories = memory_manager.retrieve_memory(user_message, top_k=5, user_id=user_id)
     except Exception as e:
         print(f"❌ Error retrieving memory: {e}")
         prior_memories = []
@@ -67,12 +63,10 @@ def run_agent(user_message: str, model: str = None) -> str:
         "\n".join([m.page_content for m in prior_memories]) if prior_memories else ""
     )
 
-    # 👤 Retrieve known facts (like name)
-    user_name = memory_manager.retrieve_fact("name")
+    user_name = memory_manager.retrieve_fact("name", user_id=user_id)
     print(f"🧪 Retrieved name from fact memory: {user_name}")
     known_facts = f"\nKnown facts:\n- Name: {user_name}" if user_name else ""
 
-    # 🧠 Final system prompt
     system_prompt = (
         "You are a digital agent with persistent memory, connected to an external memory system via the MCP backend.\n\n"
         "You have access to two types of memory:\n"
@@ -108,18 +102,38 @@ def run_agent(user_message: str, model: str = None) -> str:
 
         print(f"🤖 Agent replied: {reply}")
 
-        # 💾 Store memory
-        memory_manager.store_memory(user_message, metadata={"type": "user"})
-        memory_manager.store_memory(reply, metadata={"type": "agent"})
+        memory_manager.store_memory(user_message, metadata={"type": "user"}, user_id=user_id)
+        memory_manager.store_memory(reply, metadata={"type": "agent"}, user_id=user_id)
 
-        # 🧠 Auto-store fact if user says something like “my name is Nathan”
         if match := re.search(r"my name is (\w+)", user_message, re.IGNORECASE):
             extracted_name = match.group(1)
             print(f"🧠 Triggered fact storage: name = {extracted_name}")
-            memory_manager.store_fact("name", extracted_name)
+            memory_manager.store_fact("name", extracted_name, user_id=user_id)
+
+        if user_id != "guest" and client_ip:
+            print(f"🧠 Storing known IP for user {user_id}: {client_ip}")
+            memory_manager.store_user_ip(user_id=user_id, ip=client_ip)
 
         return reply
 
     except Exception as e:
         print("❌ Agent error:", e)
         return "⚠️ Agent encountered an error."
+
+# Optional FastAPI route (if running directly from this file for testing)
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+router = APIRouter()
+
+class AgentRequest(BaseModel):
+    user_message: str
+    model: str | None = None
+    user_id: str | None = "guest"
+
+@router.post("/mcp/agent")
+async def agent_response(request: Request, body: AgentRequest):
+    client_ip = request.client.host
+    print(f"🌐 Client IP: {client_ip}")
+    response = run_agent(body.user_message, model=body.model, user_id=body.user_id, client_ip=client_ip)
+    return {"response": response}
