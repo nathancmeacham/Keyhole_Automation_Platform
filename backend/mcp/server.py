@@ -10,11 +10,21 @@ from dotenv import load_dotenv
 from backend.mcp.agent.openai_agent import run_agent, USE_GEMINI, ENV, DEFAULT_LLM_MODEL
 from backend.mcp.tools import oracle_apex_tool
 from backend.mcp.memory.memory_singleton import memory_manager
+from backend.mcp.routes import auth_register, auth_verify, auth_login, auth_me, admin_dashboard, guest_demo, auth_logout
+
 
 load_dotenv(dotenv_path=".env")
 
 app = FastAPI()
 app.include_router(oracle_apex_tool.router)
+app.include_router(auth_register.router)
+app.include_router(auth_verify.router)
+app.include_router(auth_login.router)
+app.include_router(auth_me.router) 
+app.include_router(admin_dashboard.router)
+app.include_router(guest_demo.router)
+app.include_router(auth_logout.router)
+
 
 # ✅ CORS configuration
 app.add_middleware(
