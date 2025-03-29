@@ -1,6 +1,6 @@
 // Keyhole_Automation_Platform\frontend\Keyhole-Solution-App\app\index.tsx
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -9,19 +9,29 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  StatusBar,
+  SafeAreaView,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import LogoIcon from '../components/LogoIcon';
 
 export default function HomeScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const logoSize = Dimensions.get('window').width * 0.3; // ✅ 30% of screen width
+  const [logoSize, setLogoSize] = useState(Dimensions.get('window').width * 0.3);
   const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // Pulse loop animation
-    Animated.loop(
+    const updateLogoSize = () => {
+      setLogoSize(Dimensions.get('window').width * 0.3);
+    };
+
+    const dimensionsListener = Dimensions.addEventListener('change', updateLogoSize);
+
+    const pulseAnimation = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
           toValue: 1.05,
@@ -36,39 +46,63 @@ export default function HomeScreen() {
           useNativeDriver: true,
         }),
       ])
-    ).start();
+    );
 
-    // Fade-in animation
-    Animated.timing(fadeAnim, {
+    const fadeAnimation = Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 2000,
       delay: 1000,
       useNativeDriver: true,
-    }).start();
+    });
+
+    pulseAnimation.start();
+    fadeAnimation.start();
+    checkAuthToken();
+
+    return () => {
+      pulseAnimation.stop();
+      fadeAnimation.stop();
+      dimensionsListener.remove();
+    };
   }, []);
 
-  const handleGetStarted = () => {
-    router.push('/agent'); // Update this to your actual route
+  const checkAuthToken = async () => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      setIsLoggedIn(!!token);
+      if (!token) {
+        router.replace('/screens/LoginScreen');
+      }
+    } catch (error) {
+      console.error('Error checking auth token:', error);
+      Alert.alert('Error', 'Failed to check authentication status.');
+      router.replace('/screens/LoginScreen');
+    }
   };
 
+  const handleGetStarted = () => {
+    router.push('/agent');
+  };
+
+  if (!isLoggedIn) return null;
+
   return (
-    <View style={styles.container}>
-      <View style={{ paddingVertical: 40 }}>
-        <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-          <LogoIcon size={logoSize} />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <View style={styles.content}>
+        <View style={styles.logoContainer}>
+          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <LogoIcon size={logoSize} />
+          </Animated.View>
+        </View>
+        <Animated.View style={[styles.contentContainer, { opacity: fadeAnim }]}>
+          <Text style={styles.subtitle}>Welcome to the Keyhole Automation Platform</Text>
+          <TouchableOpacity onPress={handleGetStarted} style={styles.button}>
+            <Text style={styles.buttonText}>Get Started</Text>
+          </TouchableOpacity>
         </Animated.View>
       </View>
-
-      <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
-        <Text style={styles.subtitle}>
-          Welcome to the Keyhole Automation Platform
-        </Text>
-
-        <TouchableOpacity onPress={handleGetStarted} style={styles.button}>
-          <Text style={styles.buttonText}>Get Started</Text>
-        </TouchableOpacity>
-      </Animated.View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -76,20 +110,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#1F2D45',
+  },
+  content: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
+  logoContainer: {
+    paddingVertical: 40,
+  },
+  contentContainer: {
+    alignItems: 'center',
+  },
   subtitle: {
     marginTop: 24,
-    fontSize: 16,
-    color: '#ffffffbb',
+    fontSize: 18,
+    color: '#ffffffcc',
     textAlign: 'center',
+    fontWeight: '500',
   },
   button: {
-    marginTop: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 28,
+    marginTop: 32,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
     backgroundColor: '#374b6e',
     borderRadius: 8,
   },

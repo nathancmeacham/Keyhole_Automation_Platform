@@ -7,20 +7,22 @@ import {
   Button,
   StyleSheet,
   Keyboard,
-  Platform
+  Platform,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import sendMessageToAgent from '@/utils/agentAPI';
 
 export default function AgentScreen() {
   const [userMessage, setUserMessage] = useState('');
   const [agentResponse, setAgentResponse] = useState('');
+  const [model, setModel] = useState('gemini');
 
   const handleSend = async () => {
     if (!userMessage.trim()) return;
-    const response = await sendMessageToAgent(userMessage);
+    const response = await sendMessageToAgent(userMessage, model);
     setAgentResponse(response);
     setUserMessage('');
-    Keyboard.dismiss();  // dismiss keyboard after sending
+    Keyboard.dismiss();
   };
 
   return (
@@ -29,6 +31,18 @@ export default function AgentScreen() {
       <Text style={styles.message}>
         Ask me anything about your organization, work orders, or services.
       </Text>
+
+      <View style={styles.pickerWrapper}>
+        <Text style={styles.pickerLabel}>Select Model:</Text>
+        <Picker
+          selectedValue={model}
+          style={styles.picker}
+          onValueChange={(itemValue) => setModel(itemValue)}
+        >
+          <Picker.Item label="Gemini 1.5 Pro (Free)" value="gemini" />
+          <Picker.Item label="GPT-4o (Paid)" value="gpt-4o" />
+        </Picker>
+      </View>
 
       <TextInput
         style={styles.input}
@@ -40,7 +54,7 @@ export default function AgentScreen() {
         blurOnSubmit={false}
         onSubmitEditing={() => {
           if (!Platform.OS.startsWith('web')) {
-            handleSend();  // Send on Enter for iOS/Android
+            handleSend();
           }
         }}
         onKeyPress={({ nativeEvent }) => {
@@ -102,5 +116,18 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     color: '#fff',
     textAlign: 'center',
+  },
+  pickerWrapper: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  pickerLabel: {
+    color: '#ffffffbb',
+    marginBottom: 4,
+  },
+  picker: {
+    height: 50,
+    color: '#fff',
+    backgroundColor: '#2E3B55',
   },
 });

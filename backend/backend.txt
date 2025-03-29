@@ -1,0 +1,1459 @@
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\backend.txt:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\crawl.py:
+import os
+import sys
+
+# Define folders to exclude from crawling
+EXCLUDED_FOLDERS = ['src-depricated']
+
+def should_crawl_folder(folder_path):
+    """Check if the folder should be crawled."""
+    folder_name = os.path.basename(folder_path)
+    return folder_name not in EXCLUDED_FOLDERS
+
+def crawl_directory(directory):
+    """Recursively crawl the directory and print file contents."""
+    for root, dirs, files in os.walk(directory):
+        # Remove excluded folders from the list of directories to crawl
+        dirs[:] = [d for d in dirs if should_crawl_folder(os.path.join(root, d))]
+        
+        for file in files:
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    print(f"Contents of {file_path}:")
+                    print(f.read())
+                    print("-" * 40)
+            except (UnicodeDecodeError, PermissionError):
+                # Skip files that cannot be read (e.g., binary files or permission issues)
+                print(f"Skipping {file_path} (unreadable or binary file)")
+
+# Set sys.stdout encoding to utf-8 to handle Unicode characters
+sys.stdout.reconfigure(encoding='utf-8')
+
+# Start crawling from the specified root directory
+root_directory = r'C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend'
+crawl_directory(root_directory)
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\walk_directory.bat:
+@echo off
+setlocal enabledelayedexpansion
+
+if "%1"=="" (
+    set "rootDir=%CD%"
+) else (
+    set "rootDir=%1"
+)
+
+call :walkDir "%rootDir%" 0
+goto :eof
+
+:walkDir
+set "dir=%1"
+set "level=%2"
+
+for /F "tokens=*" %%A in ('dir /B /A-D "%dir%"') do (
+    call :printIndent %level%
+    echo +---%%A
+    call :printIndent %level%
+    echo ^|   File contents:
+    call :printIndent %level%
+    echo ^|   --------------
+    type "%dir%\%%A"
+    echo.
+    call :printIndent %level%
+    echo ^|   --------------
+    echo.
+)
+
+for /F "tokens=*" %%A in ('dir /B /AD "%dir%"') do (
+    call :printIndent %level%
+    echo +---[%%A]
+    set /a nextLevel=%level%+1
+    call :walkDir "%dir%\%%A" !nextLevel!
+)
+
+goto :eof
+
+:printIndent
+set "spaces=    "
+for /L %%i in (1,1,%1) do (
+    set "indent=!indent!!spaces!"
+)
+echo !indent!
+goto :eof
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\__init__.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\integrations\gmail_integration.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\integrations\hostgator_integration.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\integrations\hubspot_integration.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\integrations\qdrant.py:
+# File: backend/integrations/qdrant.py
+
+import asyncio
+import json
+import re
+from typing import Any, Dict, Literal, Sequence
+
+import requests
+import uvicorn
+from pydantic import BaseModel
+from mcp.server import Server as MCPServer
+from mcp.types import TextContent, Resource as MCPResource, Tool as MCPTool
+from fastmcp.resources import ResourceManager
+from fastmcp.tools import ToolManager
+from fastmcp.utilities.logging import get_logger
+
+# Import integrations
+from integrations.oracle_apex import OracleApexClient
+from integrations.vonage_api import VonageClient
+from integrations.qdrant import QdrantMemory
+from integrations.gmail_api import GmailClient
+from integrations.hubspot_api import HubSpotClient
+from integrations.discord_bot import DiscordBot
+
+logger = get_logger(__name__)
+
+class FastMCP:
+    def __init__(self, name: str = "FastMCP", **settings: Any):
+        self._mcp_server = MCPServer(name=name)
+        self._tool_manager = ToolManager()
+        self._resource_manager = ResourceManager()
+        self._setup_handlers()
+        
+        # Initialize external integrations
+        self.oracle_apex = OracleApexClient()
+        self.vonage = VonageClient()
+        self.qdrant = QdrantMemory()
+        self.gmail = GmailClient()
+        self.hubspot = HubSpotClient()
+        self.discord = DiscordBot()
+
+    def _setup_handlers(self) -> None:
+        self._mcp_server.list_tools()(self.list_tools)
+        self._mcp_server.call_tool()(self.call_tool)
+        self._mcp_server.list_resources()(self.list_resources)
+        self._mcp_server.read_resource()(self.read_resource)
+    
+    async def list_tools(self) -> list[MCPTool]:
+        return [
+            MCPTool(name="send_sms", description="Send an SMS via Vonage", inputSchema={"to": "str", "message": "str"}),
+            MCPTool(name="query_apex", description="Query Oracle APEX database", inputSchema={"query": "str"}),
+            MCPTool(name="vector_search", description="Perform a vector search in Qdrant", inputSchema={"query": "str"}),
+            MCPTool(name="store_memory", description="Store a message in Qdrant", inputSchema={"message": "str"}),
+            MCPTool(name="send_email", description="Send an email via Gmail", inputSchema={"to": "str", "subject": "str", "body": "str"}),
+            MCPTool(name="get_hubspot_contact", description="Fetch a contact from HubSpot", inputSchema={"email": "str"}),
+            MCPTool(name="send_discord_message", description="Send a message to Discord", inputSchema={"channel": "str", "message": "str"})
+        ]
+
+    async def call_tool(self, name: str, arguments: dict) -> Sequence[TextContent]:
+        result = ""
+        if name == "send_sms":
+            result = self.vonage.send_sms(arguments["to"], arguments["message"])
+        elif name == "query_apex":
+            result = self.oracle_apex.execute_query(arguments["query"])
+        elif name == "vector_search":
+            result = self.qdrant.search_memory(arguments["query"])
+        elif name == "store_memory":
+            result = self.qdrant.store_message(arguments["message"])
+        elif name == "send_email":
+            result = self.gmail.send_email(arguments["to"], arguments["subject"], arguments["body"])
+        elif name == "get_hubspot_contact":
+            result = self.hubspot.get_contact(arguments["email"])
+        elif name == "send_discord_message":
+            result = self.discord.send_message(arguments["channel"], arguments["message"])
+        return [TextContent(type="text", text=result)]
+
+    async def list_resources(self) -> list[MCPResource]:
+        return [
+            MCPResource(uri="oracle_apex://query", name="Oracle APEX Query API", description="Execute database queries"),
+            MCPResource(uri="vonage://sms", name="Vonage SMS API", description="Send SMS messages"),
+            MCPResource(uri="qdrant://vector_search", name="Qdrant Vector Search API", description="Search vector embeddings"),
+            MCPResource(uri="qdrant://store_memory", name="Qdrant Memory API", description="Store chat memory in Qdrant"),
+            MCPResource(uri="gmail://send", name="Gmail API", description="Send emails"),
+            MCPResource(uri="hubspot://contact", name="HubSpot Contact API", description="Fetch contacts"),
+            MCPResource(uri="discord://message", name="Discord Bot API", description="Send messages to Discord channels")
+        ]
+    
+    async def read_resource(self, uri: str) -> str:
+        if uri.startswith("oracle_apex://query"): return "Oracle APEX query interface"
+        if uri.startswith("vonage://sms"): return "Vonage SMS API interface"
+        if uri.startswith("qdrant://vector_search"): return "Qdrant search interface"
+        if uri.startswith("qdrant://store_memory"): return "Qdrant memory storage interface"
+        if uri.startswith("gmail://send"): return "Gmail send email API"
+        if uri.startswith("hubspot://contact"): return "HubSpot contact API"
+        if uri.startswith("discord://message"): return "Discord messaging interface"
+        return "Unknown resource"
+
+    def run(self) -> None:
+        asyncio.run(self._mcp_server.run_stdio_async())
+
+if __name__ == "__main__":
+    server = FastMCP()
+    server.run()
+# File: backend/integrations/qdrant.py
+
+import asyncio
+import json
+import re
+from typing import Any, Dict, Literal, Sequence
+
+import requests
+import uvicorn
+from pydantic import BaseModel
+from mcp.server import Server as MCPServer
+from mcp.types import TextContent, Resource as MCPResource, Tool as MCPTool
+from fastmcp.resources import ResourceManager
+from fastmcp.tools import ToolManager
+from fastmcp.utilities.logging import get_logger
+
+# Import integrations
+from integrations.oracle_apex import OracleApexClient
+from integrations.vonage_api import VonageClient
+from integrations.qdrant import QdrantMemory
+from integrations.gmail_api import GmailClient
+from integrations.hubspot_api import HubSpotClient
+from integrations.discord_bot import DiscordBot
+
+logger = get_logger(__name__)
+
+class FastMCP:
+    def __init__(self, name: str = "FastMCP", **settings: Any):
+        self._mcp_server = MCPServer(name=name)
+        self._tool_manager = ToolManager()
+        self._resource_manager = ResourceManager()
+        self._setup_handlers()
+        
+        # Initialize external integrations
+        self.oracle_apex = OracleApexClient()
+        self.vonage = VonageClient()
+        self.qdrant = QdrantMemory()
+        self.gmail = GmailClient()
+        self.hubspot = HubSpotClient()
+        self.discord = DiscordBot()
+
+    def _setup_handlers(self) -> None:
+        self._mcp_server.list_tools()(self.list_tools)
+        self._mcp_server.call_tool()(self.call_tool)
+        self._mcp_server.list_resources()(self.list_resources)
+        self._mcp_server.read_resource()(self.read_resource)
+    
+    async def list_tools(self) -> list[MCPTool]:
+        return [
+            MCPTool(name="send_sms", description="Send an SMS via Vonage", inputSchema={"to": "str", "message": "str"}),
+            MCPTool(name="query_apex", description="Query Oracle APEX database", inputSchema={"query": "str"}),
+            MCPTool(name="vector_search", description="Perform a vector search in Qdrant", inputSchema={"query": "str"}),
+            MCPTool(name="store_memory", description="Store a message in Qdrant", inputSchema={"message": "str"}),
+            MCPTool(name="send_email", description="Send an email via Gmail", inputSchema={"to": "str", "subject": "str", "body": "str"}),
+            MCPTool(name="get_hubspot_contact", description="Fetch a contact from HubSpot", inputSchema={"email": "str"}),
+            MCPTool(name="send_discord_message", description="Send a message to Discord", inputSchema={"channel": "str", "message": "str"})
+        ]
+
+    async def call_tool(self, name: str, arguments: dict) -> Sequence[TextContent]:
+        result = ""
+        if name == "send_sms":
+            result = self.vonage.send_sms(arguments["to"], arguments["message"])
+        elif name == "query_apex":
+            result = self.oracle_apex.execute_query(arguments["query"])
+        elif name == "vector_search":
+            result = self.qdrant.search_memory(arguments["query"])
+        elif name == "store_memory":
+            result = self.qdrant.store_message(arguments["message"])
+        elif name == "send_email":
+            result = self.gmail.send_email(arguments["to"], arguments["subject"], arguments["body"])
+        elif name == "get_hubspot_contact":
+            result = self.hubspot.get_contact(arguments["email"])
+        elif name == "send_discord_message":
+            result = self.discord.send_message(arguments["channel"], arguments["message"])
+        return [TextContent(type="text", text=result)]
+
+    async def list_resources(self) -> list[MCPResource]:
+        return [
+            MCPResource(uri="oracle_apex://query", name="Oracle APEX Query API", description="Execute database queries"),
+            MCPResource(uri="vonage://sms", name="Vonage SMS API", description="Send SMS messages"),
+            MCPResource(uri="qdrant://vector_search", name="Qdrant Vector Search API", description="Search vector embeddings"),
+            MCPResource(uri="qdrant://store_memory", name="Qdrant Memory API", description="Store chat memory in Qdrant"),
+            MCPResource(uri="gmail://send", name="Gmail API", description="Send emails"),
+            MCPResource(uri="hubspot://contact", name="HubSpot Contact API", description="Fetch contacts"),
+            MCPResource(uri="discord://message", name="Discord Bot API", description="Send messages to Discord channels")
+        ]
+    
+    async def read_resource(self, uri: str) -> str:
+        if uri.startswith("oracle_apex://query"): return "Oracle APEX query interface"
+        if uri.startswith("vonage://sms"): return "Vonage SMS API interface"
+        if uri.startswith("qdrant://vector_search"): return "Qdrant search interface"
+        if uri.startswith("qdrant://store_memory"): return "Qdrant memory storage interface"
+        if uri.startswith("gmail://send"): return "Gmail send email API"
+        if uri.startswith("hubspot://contact"): return "HubSpot contact API"
+        if uri.startswith("discord://message"): return "Discord messaging interface"
+        return "Unknown resource"
+
+    def run(self) -> None:
+        asyncio.run(self._mcp_server.run_stdio_async())
+
+if __name__ == "__main__":
+    server = FastMCP()
+    server.run()
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\integrations\vonage_integration.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\integrations\whatsapp_integration.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\integrations\__init__.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\config.py:
+# Keyhole_Automation_Platform\backend\mcp\src\config.py
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    ENV: str = "development"
+    DEBUG: bool = True
+    MCP_PORT: int = 8000
+    LOG_LEVEL: str = "info"
+
+    class Config:
+        env_file = ".env"
+        extra = "allow"  # ✅ This allows extra environment variables without errors
+
+settings = Settings()
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\requirements.txt:
+# Keyhole_Automation_Platform\backend\mcp\requirements.txt
+fastapi
+uvicorn[standard]
+pydantic-settings
+pytest
+httpx
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes.py:
+# Keyhole_Automation_Platform\backend\mcp\src\routes.py
+from fastapi import APIRouter
+
+api_router = APIRouter()
+
+@api_router.get("/status")
+async def get_status():
+    return {"status": "MCP Server operational"}
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\server.py:
+# Keyhole_Automation_Platform\backend\mcp\server.py
+
+import os
+from fastapi import Query
+from backend.mcp.utils.email_utils import send_email
+from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from dotenv import load_dotenv
+from backend.mcp.agent.openai_agent import run_agent, USE_GEMINI, ENV, DEFAULT_LLM_MODEL
+from backend.mcp.tools import oracle_apex_tool
+from backend.mcp.memory.memory_singleton import memory_manager
+from backend.mcp.routes import auth_register, auth_verify, auth_login, auth_me, admin_dashboard, guest_demo, auth_logout
+
+
+load_dotenv(dotenv_path=".env")
+
+app = FastAPI()
+app.include_router(oracle_apex_tool.router)
+app.include_router(auth_register.router)
+app.include_router(auth_verify.router)
+app.include_router(auth_login.router)
+app.include_router(auth_me.router) 
+app.include_router(admin_dashboard.router)
+app.include_router(guest_demo.router)
+app.include_router(auth_logout.router)
+
+
+# ✅ CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # You can restrict this later
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ✅ Health check: root
+@app.get("/")
+def root():
+    return {"status": "MCP Backend running"}
+
+# ✅ Health check: status
+@app.get("/mcp/status")
+def mcp_status():
+    return {"status": "ok"}
+
+# ✅ LLM info endpoint
+@app.get("/mcp/llm")
+def llm_status():
+    return {
+        "env": ENV,
+        "llm": "gemini-1.5-pro" if USE_GEMINI else DEFAULT_LLM_MODEL
+    }
+
+@app.get("/routes")
+def list_routes():
+    return [route.path for route in app.routes]
+
+# ✅ Agent endpoint
+class AgentRequest(BaseModel):
+    user_message: str
+    model: str | None = None  # ✅ optional model override from frontend
+    user_id: str | None = "guest"  # ✅ user ID passed from frontend, default to 'guest'
+
+@app.post("/mcp/agent")
+async def agent_response(request: Request, body: AgentRequest):
+    client_ip = request.client.host
+    print(f"🌐 Client IP: {client_ip}")
+
+    if body.user_id == "guest":
+        memory_manager.store_guest_ip(client_ip)
+
+    print(f"📨 Incoming message: {body.user_message}")
+    print(f"🔁 Requested model: {body.model}")
+    print(f"👤 User ID: {body.user_id}")
+
+    try:
+        response = run_agent(body.user_message, model=body.model, user_id=body.user_id)
+        print(f"🤖 Agent replied: {response}")
+        return {"response": response}
+
+    except Exception as e:
+        print("❌ Agent error:", e)
+        return {"response": "⚠️ Sorry, I'm having trouble thinking right now."}
+
+# ✅ Memory endpoints
+class MemoryRequest(BaseModel):
+    text: str
+    metadata: dict
+    user_id: str | None = "guest"
+
+@app.post("/mcp/memory/store")
+async def store_memory(request: MemoryRequest):
+    try:
+        memory_manager.store_memory(request.text, request.metadata, user_id=request.user_id)
+        return {"status": "Memory stored successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/mcp/memory/retrieve")
+async def retrieve_memory(request: MemoryRequest):
+    try:
+        results = memory_manager.retrieve_memory(request.text, request.metadata.get("type"), user_id=request.user_id)
+        return {"results": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+# ✅ Email endpoint
+@app.get("/test-email")
+def test_email(to: str = Query(..., description="Target email address")):
+    subject = "🔐 Test Email from Keyhole MCP"
+    body = "This is a test message sent from the Keyhole MCP server."
+    result = send_email(to, subject, body)
+    return {"sent": result}
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\__init__.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\agent\langgraph.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\agent\openai_agent.py:
+# Keyhole_Automation_Platform\backend\mcp\agent\openai_agent.py
+
+import os
+import re
+from dotenv import load_dotenv
+from fastapi import Request
+from backend.mcp.memory.memory_singleton import memory_manager
+
+load_dotenv()
+
+ENV = os.getenv("ENV", "development").lower()
+DEFAULT_LLM_MODEL = os.getenv("DEFAULT_LLM_MODEL", "gpt-4o")
+USE_GEMINI = ENV == "development"
+
+print(f"🔁 ENV: {ENV}")
+print(f"🧠 USE_GEMINI: {USE_GEMINI}")
+
+SYSTEM_PROMPT = (
+    "You are a digital agent connected to an external memory system via an MCP backend. "
+    "You can retrieve and store facts and past conversations to assist users better. "
+    "Refer to memory for helpful context and continuity."
+)
+
+# Gemini setup
+gemini_model = None
+if USE_GEMINI:
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+        gemini_model = genai.GenerativeModel("gemini-1.5-pro")
+        print("✅ Gemini model loaded")
+    except Exception as e:
+        print("❌ Failed to initialize Gemini. Falling back to OpenAI.", e)
+        USE_GEMINI = False
+
+# OpenAI setup
+import openai
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+def clean_json_string(json_str):
+    return re.sub(r"^```(?:json)?|```$", "", json_str.strip(), flags=re.IGNORECASE)
+
+def run_agent(user_message: str, model: str = None, user_id: str = "guest", client_ip: str = None) -> str:
+    model_map = {
+        "gpt-4o": "gpt-4o",
+        "gpt-4": "gpt-4",
+        "gpt-3.5-turbo": "gpt-3.5-turbo",
+        "GPT-4o (Paid)": "gpt-4o",
+        "ChatGPT 4 (Free)": "gpt-3.5-turbo",
+        "Gemini 1.5 Pro (Free)": "gemini",
+    }
+
+    selected_model = model_map.get(model, "gemini" if USE_GEMINI else DEFAULT_LLM_MODEL)
+    print(f"🧠 Requested Model: {model} → Using: {selected_model}")
+
+    try:
+        prior_memories = memory_manager.retrieve_memory(user_message, top_k=5, user_id=user_id)
+    except Exception as e:
+        print(f"❌ Error retrieving memory: {e}")
+        prior_memories = []
+
+    memory_snippets = (
+        "\n".join([m.page_content for m in prior_memories]) if prior_memories else ""
+    )
+
+    user_name = memory_manager.retrieve_fact("name", user_id=user_id)
+    print(f"🧪 Retrieved name from fact memory: {user_name}")
+    known_facts = f"\nKnown facts:\n- Name: {user_name}" if user_name else ""
+
+    system_prompt = (
+        "You are a digital agent with persistent memory, connected to an external memory system via the MCP backend.\n\n"
+        "You have access to two types of memory:\n"
+        "- Key/Value Fact Memory: for storing exact facts like names, passwords, numbers, and user-specific data.\n"
+        "- Vector Context Memory: for storing and retrieving semantically meaningful conversations and ideas.\n\n"
+        "You can retrieve facts using your MCP tools. If you find a fact like the user's name, refer to it directly.\n"
+        "When the user asks about their name, respond using the fact memory key 'name'. For example, if 'name = Nathan', reply: 'Your name is Nathan.\n\n"
+        "If a user says, 'My name is Nathan', store 'Nathan' as their name using your fact memory system.\n\n"
+        "You are not required to explain how your memory system works unless asked. Just use it naturally to be helpful."
+        f"\n\nContext:\n{memory_snippets}"
+        f"{known_facts}"
+    )
+
+    try:
+        if selected_model == "gemini" and gemini_model:
+            print("🤖 Using Gemini 1.5 Pro")
+            response = gemini_model.generate_content(
+                [{"role": "user", "parts": [system_prompt + f"\n\nUser: {user_message}"]}]
+            )
+            reply = response.text.strip()
+
+        else:
+            print(f"🤖 Using OpenAI model: {selected_model}")
+            response = openai.chat.completions.create(
+                model=selected_model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message},
+                ],
+                temperature=0.7,
+            )
+            reply = response.choices[0].message.content.strip()
+
+        print(f"🤖 Agent replied: {reply}")
+
+        memory_manager.store_memory(user_message, metadata={"type": "user"}, user_id=user_id)
+        memory_manager.store_memory(reply, metadata={"type": "agent"}, user_id=user_id)
+
+        if match := re.search(r"my name is (\w+)", user_message, re.IGNORECASE):
+            extracted_name = match.group(1)
+            print(f"🧠 Triggered fact storage: name = {extracted_name}")
+            memory_manager.store_fact("name", extracted_name, user_id=user_id)
+
+        if user_id != "guest" and client_ip:
+            print(f"🧠 Storing known IP for user {user_id}: {client_ip}")
+            memory_manager.store_user_ip(user_id=user_id, ip=client_ip)
+
+        return reply
+
+    except Exception as e:
+        print("❌ Agent error:", e)
+        return "⚠️ Agent encountered an error."
+
+# Optional FastAPI route (if running directly from this file for testing)
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+router = APIRouter()
+
+class AgentRequest(BaseModel):
+    user_message: str
+    model: str | None = None
+    user_id: str | None = "guest"
+
+@router.post("/mcp/agent")
+async def agent_response(request: Request, body: AgentRequest):
+    client_ip = request.client.host
+    print(f"🌐 Client IP: {client_ip}")
+    response = run_agent(body.user_message, model=body.model, user_id=body.user_id, client_ip=client_ip)
+    return {"response": response}
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\agent\__init__.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\agent\__pycache__\openai_agent.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\agent\__pycache__\openai_agent.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\agent\__pycache__\__init__.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\agent\__pycache__\__init__.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\controllers\mcp_controller.py:
+from fastapi import APIRouter
+
+mcp_router = APIRouter()  # ✅ Ensure this is correctly defined
+
+@mcp_router.get("/status")
+async def mcp_status():
+    return {"status": "MCP Server is operational"}
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\controllers\__init__.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\dependencies\auth.py:
+# Keyhole_Automation_Platform\backend\mcp\dependencies\auth.py
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from backend.mcp.utils.auth_utils import decode_jwt_token
+from pydantic import BaseModel
+from typing import Optional
+
+# OAuth2 scheme to extract Bearer token from headers
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+# Token payload structure
+class TokenData(BaseModel):
+    sub: str
+    role: Optional[str] = "user"
+
+# Reusable auth dependency
+def get_current_user(required_role: Optional[str] = None):
+    def dependency(token: str = Depends(oauth2_scheme)) -> TokenData:
+        payload = decode_jwt_token(token)
+
+        if not payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or missing token"
+            )
+
+        try:
+            user = TokenData(**payload)
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Malformed token payload"
+            )
+
+        if required_role and user.role != required_role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: Requires role '{required_role}', but you are '{user.role}'"
+            )
+
+        return user
+
+    return dependency
+
+# Common role-based dependencies
+user_required = get_current_user(required_role="user")
+admin_required = get_current_user(required_role="admin")
+guest_required = get_current_user(required_role="guest")
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\dependencies\__init__.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\dependencies\__pycache__\auth.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\dependencies\__pycache__\auth.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\dependencies\__pycache__\__init__.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\dependencies\__pycache__\__init__.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\memory\memory_manager.py:
+# Keyhole_Automation_Platform\backend\mcp\memory\memory_manager.py
+
+import os
+import traceback
+from dotenv import load_dotenv
+from hashlib import md5
+from qdrant_client import QdrantClient
+from qdrant_client.http.models import (
+    Distance,
+    VectorParams,
+    Filter,
+    FieldCondition,
+    MatchValue,
+    PointStruct,
+)
+from langchain_openai import OpenAIEmbeddings
+from langchain_qdrant import QdrantVectorStore
+
+load_dotenv()
+
+QDRANT_URL = os.getenv("QDRANT_URL")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+EMBEDDING_DIMENSIONS = 3072
+DEFAULT_USER_ID = "guest"
+
+class MemoryManager:
+    def __init__(self):
+        print("🔧 Initializing MemoryManager...")
+        print("🔍 MemoryManager stack trace:")
+        traceback.print_stack(limit=5)
+
+        self.embeddings = OpenAIEmbeddings(
+            model="text-embedding-3-large", openai_api_key=OPENAI_API_KEY
+        )
+        self.qdrant_client = QdrantClient(url=QDRANT_URL)
+        self.base_memory_collection = "rag_memory"
+        self.base_facts_collection = "facts"
+        self.ip_analytics_collection = "ip_analytics"
+
+        self.ensure_collection(self.ip_analytics_collection, EMBEDDING_DIMENSIONS)
+
+    def _get_collection_name(self, base, user_id):
+        return f"{base}_{user_id}"
+
+    def ensure_collection(self, name, vector_size):
+        try:
+            collections = self.qdrant_client.get_collections().collections
+            collection_names = [c.name for c in collections]
+
+            if name in collection_names:
+                print(f"✅ Collection '{name}' already exists. Skipping creation.")
+            else:
+                self.qdrant_client.create_collection(
+                    collection_name=name,
+                    vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
+                )
+                print(f"✅ Created new collection '{name}' with {vector_size} dimensions.")
+
+        except Exception as e:
+            print(f"❌ Error checking or creating collection '{name}': {e}")
+
+    def recreate_collection(self, *args, **kwargs):
+        raise RuntimeError("🚨 recreate_collection was called unexpectedly!")
+
+    def store_memory(self, text, metadata, user_id=DEFAULT_USER_ID):
+        try:
+            collection = self._get_collection_name(self.base_memory_collection, user_id)
+            self.ensure_collection(collection, EMBEDDING_DIMENSIONS)
+            vectorstore = QdrantVectorStore(
+                client=self.qdrant_client,
+                collection_name=collection,
+                embedding=self.embeddings,
+            )
+            vectorstore.add_texts([text], metadatas=[metadata])
+            print(f"✅ Stored memory for {user_id}: {text[:30]}...")
+        except Exception as e:
+            print(f"❌ Failed to store memory: {e}")
+
+    def retrieve_memory(self, query, memory_type=None, top_k=5, user_id=DEFAULT_USER_ID):
+        try:
+            collection = self._get_collection_name(self.base_memory_collection, user_id)
+            vectorstore = QdrantVectorStore(
+                client=self.qdrant_client,
+                collection_name=collection,
+                embedding=self.embeddings,
+            )
+
+            qdrant_filter = None
+            if memory_type:
+                qdrant_filter = Filter(
+                    must=[
+                        FieldCondition(
+                            key="metadata.type", match=MatchValue(value=memory_type)
+                        )
+                    ]
+                )
+
+            results = vectorstore.similarity_search(query, k=top_k, filter=qdrant_filter)
+            return results if results else []
+        except Exception as e:
+            print(f"❌ Error retrieving memory: {e}")
+            return []
+
+    def store_fact(self, key, value, user_id=DEFAULT_USER_ID):
+        try:
+            point_id = int(md5(f"{user_id}_{key}".encode()).hexdigest()[:8], 16)
+            vector = self.embeddings.embed_query(f"{key}: {value}")
+            collection = self._get_collection_name(self.base_facts_collection, user_id)
+            self.ensure_collection(collection, EMBEDDING_DIMENSIONS)
+            self.qdrant_client.upsert(
+                collection_name=collection,
+                points=[
+                    PointStruct(
+                        id=point_id,
+                        vector=vector,
+                        payload={
+                            "fact_key": key,
+                            "text": f"{key}: {value}"
+                        },
+                    )
+                ],
+            )
+            print(f"✅ Stored fact for {user_id}: {key} = {value} (ID: {point_id})")
+        except Exception as e:
+            print(f"❌ Failed to store fact: {e}")
+
+    def retrieve_fact(self, key, user_id=DEFAULT_USER_ID):
+        try:
+            point_id = int(md5(f"{user_id}_{key}".encode()).hexdigest()[:8], 16)
+            collection = self._get_collection_name(self.base_facts_collection, user_id)
+            result = self.qdrant_client.retrieve(
+                collection_name=collection,
+                ids=[point_id]
+            )
+            if result and len(result) > 0:
+                value = result[0].payload.get("text", "").split(": ", 1)[1]
+                print(f"🔍 Retrieved fact for '{key}' (user={user_id}): {value}")
+                return value
+
+            print(f"⚠️ No fact found for key: {key} (user={user_id})")
+            return None
+
+        except Exception as e:
+            print(f"❌ Error retrieving fact: {e}")
+            return None
+
+    def list_all_facts(self, user_id=DEFAULT_USER_ID):
+        try:
+            collection = self._get_collection_name(self.base_facts_collection, user_id)
+            response, _ = self.qdrant_client.scroll(
+                collection_name=collection,
+                with_payload=True,
+                limit=1000
+            )
+
+            facts = {}
+            for point in response:
+                payload = point.payload or {}
+                text = payload.get("text", "")
+                if ": " in text:
+                    key, value = text.split(": ", 1)
+                    facts[key] = value
+
+            return facts
+
+        except Exception as e:
+            print(f"❌ Error listing all facts: {e}")
+            return {}
+
+    def store_guest_ip(self, ip):
+        key = f"guest_ip::{ip}"
+        self.store_fact(key, "1", user_id=self.ip_analytics_collection)
+
+    def track_guest_ip(self, ip):
+        """Alias for test clarity — ensures one call style."""
+        self.store_guest_ip(ip)
+
+    def list_guest_ips(self):
+        return [
+            k.split("::")[-1]
+            for k in self.list_all_facts(user_id=self.ip_analytics_collection).keys()
+            if k.startswith("guest_ip::")
+        ]
+
+    def track_user_ip(self, user_id, ip):
+        """Only stores a new IP for a user if it doesn't already exist."""
+        key = f"user_ip::{user_id}::{ip}"
+        point_id = int(md5(f"{self.ip_analytics_collection}_{key}".encode()).hexdigest()[:8], 16)
+
+        # Check if point already exists before storing
+        result = self.qdrant_client.retrieve(
+            collection_name=self._get_collection_name(self.base_facts_collection, self.ip_analytics_collection),
+            ids=[point_id]
+        )
+
+        if not result:
+            self.store_fact(key, "1", user_id=self.ip_analytics_collection)
+
+    def get_user_ips(self, user_id):
+        return [
+            k.split("::")[-1]
+            for k in self.list_all_facts(user_id=self.ip_analytics_collection).keys()
+            if k.startswith(f"user_ip::{user_id}::")
+        ]
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\memory\memory_singleton.py:
+# backend\mcp\memory\memory_singleton.py
+from backend.mcp.memory.memory_manager import MemoryManager
+
+memory_manager = MemoryManager()
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\memory\__init__.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\memory\__pycache__\memory_manager.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\memory\__pycache__\memory_manager.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\memory\__pycache__\memory_singleton.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\memory\__pycache__\memory_singleton.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\memory\__pycache__\__init__.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\memory\__pycache__\__init__.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\admin_dashboard.py:
+# Keyhole_Automation_Platform\backend\mcp\routes\admin_dashboard.py
+
+from fastapi import APIRouter, Depends
+from backend.mcp.dependencies.auth import admin_required
+
+router = APIRouter()
+
+@router.get("/admin/stats")
+def admin_stats(user = Depends(admin_required)):
+    return {"message": f"Welcome admin {user.sub}", "role": user.role}
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\admin_tools.py:
+# Keyhole_Automation_Platform\backend\mcp\routes\admin_tools.py
+
+from fastapi import APIRouter, Depends
+from backend.mcp.dependencies.auth import get_current_user
+from pydantic import BaseModel
+
+router = APIRouter()
+
+@router.get("/admin/dashboard")
+def admin_dashboard(user=Depends(get_current_user("admin"))):
+    return {
+        "status": "✅ Access granted",
+        "user": user.sub,
+        "role": user.role
+    }
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\auth_login.py:
+# Keyhole_Automation_Platform\backend\mcp\routes\auth_login.py
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, EmailStr
+from backend.mcp.utils.auth_utils import verify_password, create_jwt_token
+from backend.mcp.memory.memory_singleton import memory_manager
+
+router = APIRouter()
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    email: str
+
+@router.post("/auth/login", response_model=LoginResponse)
+async def login_user(request: LoginRequest):
+    email = request.email.lower().strip()
+    password = request.password
+
+    # 🔐 Retrieve password hash
+    stored_hash = memory_manager.retrieve_fact("password_hash", user_id=email)
+    if not stored_hash:
+        print("❌ No password hash found.")
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # 🔐 Verify password
+    if not verify_password(password, stored_hash):
+        print("❌ Password mismatch.")
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # ✅ Check email verification
+    verified = memory_manager.retrieve_fact("email_verified", user_id=email)
+    if verified != "true":
+        print("⚠️ Email not verified.")
+        raise HTTPException(status_code=403, detail="Email is not verified")
+
+    # 🎟️ Issue token
+    token = create_jwt_token({"sub": email, "role": "user"})
+
+    print(f"✅ Login success for {email}")
+    return LoginResponse(access_token=token, email=email)
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\auth_logout.py:
+# keyhole_Automation_Platform\backend\mcp\routes\auth_logout.py
+
+from fastapi import APIRouter, Depends
+from backend.mcp.dependencies.auth import get_current_user
+
+router = APIRouter()
+
+@router.post("/auth/logout")
+async def logout(user = Depends(get_current_user())):
+    return {"message": "✅ Logged out"}
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\auth_me.py:
+# Keyhole_Automation_Platform\backend\mcp\routes\auth_me.py
+
+from fastapi import APIRouter, Depends, Request
+from backend.mcp.dependencies.auth import get_current_user, TokenData
+from backend.mcp.memory.memory_singleton import memory_manager
+from datetime import datetime, timezone
+
+router = APIRouter()
+
+@router.get("/auth/me")
+async def get_me(request: Request, user: TokenData = Depends(get_current_user())):
+    client_ip = request.client.host
+    last_verified = memory_manager.retrieve_fact("email_verified_at", user_id=user.sub)
+    ip_history = memory_manager.get_user_ips(user.sub) or []
+
+    return {
+        "email": user.sub,
+        "role": user.role,
+        "status": "authenticated",
+        "ip": client_ip,
+        "last_verified": last_verified,
+        "ip_history": ip_history,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+from datetime import datetime, timezone
+
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\auth_register.py:
+# Keyhole_Automation_Platform\backend\mcp\routes\auth_register.py
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, EmailStr
+from backend.mcp.utils.auth_utils import hash_password
+from backend.mcp.utils.email_utils import generate_email_token, send_email
+from backend.mcp.memory.memory_singleton import memory_manager
+
+router = APIRouter()
+
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+@router.post("/auth/register")
+async def register_user(request: RegisterRequest):
+    email = request.email.lower()
+    user_id = email  # for clarity and consistency
+
+    # 🔍 Check if user already exists (avoid matching on string "None")
+    existing_hash = memory_manager.retrieve_fact("password_hash", user_id=user_id)
+    if existing_hash is not None:
+        raise HTTPException(status_code=409, detail="Email already registered")
+
+    # 🔐 Store hashed password and default role
+    hashed_pw = hash_password(request.password)
+    memory_manager.store_fact("password_hash", hashed_pw, user_id=user_id)
+    memory_manager.store_fact("role", "user", user_id=user_id)
+
+    # ✉️ Prepare email content
+    token = generate_email_token(user_id)
+    verification_link = f"http://localhost:8000/auth/verify-email?token={token}"
+    subject = "✅ Verify your email"
+    body = f"Welcome to Keyhole!\n\nClick below to verify your account:\n\n{verification_link}"
+
+    # ✉️ Attempt to send email
+    if send_email(user_id, subject, body):
+        return {"message": "✅ Registration successful. Please verify your email."}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to send verification email")
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\auth_verify.py:
+# Keyhole_Automation_Platform\backend\mcp\routes\auth_verify.py
+
+from fastapi import APIRouter, HTTPException, Query, Request
+from backend.mcp.utils.email_utils import confirm_email_token
+from backend.mcp.memory.memory_singleton import memory_manager
+from datetime import datetime
+
+router = APIRouter()
+
+@router.get("/auth/verify-email")
+async def verify_email(request: Request, token: str = Query(...)):
+    client_ip = request.client.host
+    print(f"🔐 Incoming verification attempt from IP: {client_ip}")
+
+    email = confirm_email_token(token)
+    if not email:
+        print("❌ Invalid or expired token used.")
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    # Check if user is already verified
+    already_verified = memory_manager.retrieve_fact("email_verified", user_id=email)
+    if already_verified == "true":
+        print(f"⚠️ Email '{email}' is already verified.")
+        return {
+            "status": "already_verified",
+            "message": f"Email '{email}' was already verified.",
+            "email": email,
+        }
+
+    # Store verification flag and metadata
+    memory_manager.store_fact("email_verified", "true", user_id=email)
+    memory_manager.store_fact("email_verified_at", datetime.utcnow().isoformat(), user_id=email)
+    memory_manager.track_user_ip(email, client_ip)
+
+    print(f"✅ Email '{email}' successfully verified.")
+    return {
+        "status": "success",
+        "message": "✅ Email verified successfully.",
+        "email": email,
+        "ip": client_ip,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\guest_demo.py:
+# Keyhole_Automation_Platform\backend\mcp\routes\guest_demo.py
+
+from fastapi import APIRouter, Depends
+from backend.mcp.dependencies.auth import guest_required
+
+router = APIRouter()
+
+@router.get("/guest/demo")
+def guest_demo(user = Depends(guest_required)):
+    return {
+        "message": "🧪 Welcome, guest user!",
+        "tip": "You can ask general questions but must register to access saved memory.",
+        "user": user.sub,
+        "role": user.role
+    }
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\__init__.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\__pycache__\admin_dashboard.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\__pycache__\admin_dashboard.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\__pycache__\auth_login.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\__pycache__\auth_login.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\__pycache__\auth_logout.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\__pycache__\auth_logout.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\__pycache__\auth_me.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\__pycache__\auth_me.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\__pycache__\auth_register.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\__pycache__\auth_register.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\__pycache__\auth_verify.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\__pycache__\auth_verify.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\__pycache__\guest_demo.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\__pycache__\guest_demo.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\__pycache__\__init__.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\routes\__pycache__\__init__.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\tools\oracle_apex_tool.py:
+# Keyhole_Automation_Platform\backend\mcp\tools\oracle_apex_tool.py
+
+from fastapi import APIRouter
+import oracledb
+import os
+from dotenv import load_dotenv
+from fastapi import APIRouter
+
+load_dotenv()
+
+router = APIRouter(prefix="/oracle")
+
+ORACLE_USER = "admin"
+ORACLE_PASSWORD = os.getenv("ORACLE_APEX_PASSWORD")
+ORACLE_HOST = "adb.us-ashburn-1.oraclecloud.com"
+ORACLE_PORT = 1522
+ORACLE_SERVICE_NAME = "g3c9758918c2229_keyholeinstancedatabase"
+
+ORACLE_DSN = f"tcps://{ORACLE_HOST}:{ORACLE_PORT}/{ORACLE_SERVICE_NAME}"
+
+def get_db_connection():
+    try:
+        connection = oracledb.connect(
+            user=ORACLE_USER,
+            password=ORACLE_PASSWORD,
+            dsn=ORACLE_DSN,
+            ssl_server_dn_match=True
+        )
+        return connection
+    except oracledb.DatabaseError as error:
+        print(f"❌ Oracle DB error: {error}")
+        return None
+
+@router.get("/test")
+def test_connection():
+    conn = get_db_connection()
+    if conn:
+        conn.close()
+        return {"status": "success", "message": "Database connection successful!"}
+    else:
+        return {"status": "error", "message": "Database connection failed."}
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\tools\tools.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\tools\__init__.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\tools\__pycache__\oracle_apex_tool.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\tools\__pycache__\oracle_apex_tool.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\tools\__pycache__\__init__.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\tools\__pycache__\__init__.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\utils\auth_utils.py:
+# Keyhole_Automation_Platform\backend\mcp\utils\auth_utils.py
+
+import os
+from datetime import datetime, timedelta, timezone
+from typing import Optional
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# 🔐 Password hashing configuration
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# 🔑 JWT configuration
+JWT_SECRET = os.getenv("JWT_SECRET", "dev_secret")
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRES_IN_MINUTES = int(os.getenv("JWT_EXPIRES_IN_MINUTES", 60 * 24))  # default: 1 day
+
+# ✉️ Email token configuration
+EMAIL_TOKEN_SECRET = os.getenv("EMAIL_TOKEN_SECRET", "email_secret")
+EMAIL_TOKEN_EXPIRES_MINUTES = int(os.getenv("EMAIL_TOKEN_EXPIRES_MINUTES", 60 * 24))  # default: 24 hrs
+
+
+# 🔐 Password utilities
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+# 🎟️ JWT utilities
+def create_jwt_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=JWT_EXPIRES_IN_MINUTES))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+def decode_jwt_token(token: str) -> Optional[dict]:
+    try:
+        return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except JWTError as e:
+        print(f"❌ Failed to decode JWT: {e}")
+        return None
+
+
+# ✉️ Email verification token utilities
+def create_email_token(email: str) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(minutes=EMAIL_TOKEN_EXPIRES_MINUTES)
+    payload = {"sub": email, "exp": expire}
+    return jwt.encode(payload, EMAIL_TOKEN_SECRET, algorithm=JWT_ALGORITHM)
+
+def confirm_email_token(token: str) -> Optional[str]:
+    try:
+        payload = jwt.decode(token, EMAIL_TOKEN_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload.get("sub")
+    except JWTError as e:
+        print(f"❌ Invalid email token: {e}")
+        return None
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\utils\email_utils.py:
+# Keyhole_Automation_Platform\backend\mcp\utils\email_utils.py
+
+import os
+import smtplib
+import ssl
+import traceback
+from email.message import EmailMessage
+from dotenv import load_dotenv
+from itsdangerous import URLSafeTimedSerializer
+
+load_dotenv()
+
+SMTP_SERVER = os.getenv("SMTP_SERVER", "mail.keyholesolution.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
+SMTP_USERNAME = os.getenv("SMTP_USERNAME", "security@keyholesolution.com")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+
+# Token-related secrets
+SECRET_KEY = os.getenv("EMAIL_TOKEN_SECRET", "super-secret-key")
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+
+
+def send_email(to_email: str, subject: str, body: str) -> bool:
+    from_email = os.getenv("EMAIL_FROM")
+    smtp_host = os.getenv("SMTP_HOST")
+    smtp_port = int(os.getenv("SMTP_PORT", 587))
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_pass = os.getenv("SMTP_PASS")
+    
+    # ✅ Move this check inside the function
+    if os.getenv("IS_TESTING", "false").lower() == "true":
+        print(f"📧 [MOCKED] Email sent to {to_email}")
+        return True
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = from_email
+    msg["To"] = to_email
+    msg.set_content(body)
+
+    try:
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+        print(f"📧 Email sent to {to_email}")
+        return True
+    except Exception as e:
+        print("❌ Failed to send email:")
+        traceback.print_exc()
+        return False
+
+
+def generate_email_token(email: str) -> str:
+    """Generate a time-limited token for verifying email."""
+    serializer = URLSafeTimedSerializer(SECRET_KEY)
+    return serializer.dumps(email, salt="email-confirm")
+
+
+def confirm_email_token(token: str, expiration=3600) -> str | None:
+    """Confirm token and return email if valid."""
+    serializer = URLSafeTimedSerializer(SECRET_KEY)
+    try:
+        email = serializer.loads(token, salt="email-confirm", max_age=expiration)
+        return email
+    except Exception:
+        return None
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\utils\permissions.py:
+# Keyhole_Automation_Platform\backend\mcp\utils\permissions.py
+
+
+ALLOWED_FILES = set([
+    "example.py",
+    "utils.py",
+    # Add permitted filenames here
+])
+
+def is_file_allowed(filename: str) -> bool:
+    return filename in ALLOWED_FILES
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\utils\project_utils.py:
+# Keyhole_Automation_Platform\backend\mcp\utils\project_utils.py
+
+import os
+
+def count_files(directory='.'):
+    total_files = 0
+    for root, dirs, files in os.walk(directory):
+        total_files += len(files)
+    return total_files
+
+def list_files(directory='.'):
+    file_list = []
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            file_list.append(os.path.relpath(os.path.join(root, file), directory))
+    return file_list
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\utils\__init__.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\utils\__pycache__\auth_utils.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\utils\__pycache__\auth_utils.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\utils\__pycache__\email_utils.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\utils\__pycache__\email_utils.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\utils\__pycache__\__init__.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\utils\__pycache__\__init__.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\__pycache__\config.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\__pycache__\config.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\__pycache__\server.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\__pycache__\server.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\__pycache__\__init__.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\mcp\__pycache__\__init__.cpython-312.pyc (unreadable or binary file)
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\models\models.py:
+from pydantic import BaseModel
+from typing import List, Optional
+
+class FileContext(BaseModel):
+    filename: str
+    content: str
+
+class CodeChange(BaseModel):
+    line: int
+    original: str
+    suggested: str
+
+class Suggestion(BaseModel):
+    file: str
+    changes: List[CodeChange]
+    reasoning: Optional[str] = None
+
+class Approval(BaseModel):
+    file: str
+    approved: bool
+
+class Fact(BaseModel):
+    key: str
+    value: str
+
+class Conversation(BaseModel):
+    text: str
+
+class User(BaseModel):
+    user_id: int
+    username: str
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\models\__init__.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\security\security.py:
+# Keyhole_Automation_Platform\backend\mcp\security.py
+
+from fastapi import Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
+from models import User
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
+    # Placeholder: Implement actual token verification logic here
+    if token == "valid-token":
+        return User(user_id=1, username="Nathan")
+    else:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\security\__init__.py:
+
+----------------------------------------
+Contents of C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\__pycache__\__init__.cpython-312.pyc:
+Skipping C:\Users\natha\Py_Coding_Projects\Keyhole_Automation_Platform\backend\__pycache__\__init__.cpython-312.pyc (unreadable or binary file)

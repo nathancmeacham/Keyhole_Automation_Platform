@@ -15,6 +15,6 @@ export default function Layout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1F2D45', // Matching background for LogoIcon screen
+    backgroundColor: '#1F2D45',
   },
 });
