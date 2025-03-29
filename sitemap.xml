@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://your-docs-site.com/</loc>
+         <lastmod>2025-03-29</lastmod>
+    </url>
+    <url>
+         <loc>https://your-docs-site.com/CHANGELOG/</loc>
+         <lastmod>2025-03-29</lastmod>
+    </url>
+    <url>
+         <loc>https://your-docs-site.com/INIT/</loc>
+         <lastmod>2025-03-29</lastmod>
+    </url>
+    <url>
+         <loc>https://your-docs-site.com/Pytest%20Setup/</loc>
+         <lastmod>2025-03-29</lastmod>
+    </url>
+    <url>
+         <loc>https://your-docs-site.com/React%20Native%20Settup/</loc>
+         <lastmod>2025-03-29</lastmod>
+    </url>
+    <url>
+         <loc>https://your-docs-site.com/security/</loc>
+         <lastmod>2025-03-29</lastmod>
+    </url>
+    <url>
+         <loc>https://your-docs-site.com/dev/archiving/</loc>
+         <lastmod>2025-03-29</lastmod>
+    </url>
+    <url>
+         <loc>https://your-docs-site.com/internal/system_context/</loc>
+         <lastmod>2025-03-29</lastmod>
+    </url>
+</urlset>
